@@ -5,7 +5,7 @@ import {
   Users, WalletCards, Wifi, WifiOff, X, Search, Bell, Mail, ShieldCheck,
   Database, CircleDollarSign, ChevronRight, CheckCircle2, AlertTriangle,
   Sparkles, Save, Plus, Trash2, Landmark, MapPin, Phone, AtSign, Globe2,
-  BadgeCheck, CreditCard, UserRound, Stamp, Image as ImageIcon, Clock3, CalendarDays, TrendingUp
+  BadgeCheck, CreditCard, UserRound, Stamp, Image as ImageIcon, Clock3, CalendarDays, TrendingUp, MapPinned
 } from "lucide-react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
@@ -138,6 +138,76 @@ function StatusDonut(){
   );
 }
 
+
+function DateTimeWidget({online}){
+  const [now,setNow] = useState(new Date());
+
+  useEffect(()=>{
+    const timer = window.setInterval(()=>setNow(new Date()),1000);
+    return ()=>window.clearInterval(timer);
+  },[]);
+
+  const dateText = new Intl.DateTimeFormat("th-TH-u-ca-buddhist",{
+    weekday:"long",
+    day:"numeric",
+    month:"long",
+    year:"numeric",
+    timeZone:"Asia/Bangkok"
+  }).format(now);
+
+  const timeText = new Intl.DateTimeFormat("th-TH",{
+    hour:"2-digit",
+    minute:"2-digit",
+    second:"2-digit",
+    hour12:false,
+    timeZone:"Asia/Bangkok"
+  }).format(now);
+
+  const hour = Number(new Intl.DateTimeFormat("en-GB",{
+    hour:"2-digit",
+    hour12:false,
+    timeZone:"Asia/Bangkok"
+  }).format(now));
+
+  const greeting =
+    hour < 6 ? "ราตรีสวัสดิ์" :
+    hour < 12 ? "สวัสดีตอนเช้า" :
+    hour < 17 ? "สวัสดีตอนบ่าย" :
+    hour < 20 ? "สวัสดีตอนเย็น" :
+    "สวัสดีครับ";
+
+  return (
+    <section className="datetime-center glass">
+      <div className="datetime-main">
+        <div className="datetime-icon"><Clock3 size={22}/></div>
+        <div>
+          <span className="datetime-greeting">{greeting}</span>
+          <strong>{timeText}</strong>
+          <small>เวลาไทย · Asia/Bangkok</small>
+        </div>
+      </div>
+
+      <div className="datetime-divider"/>
+
+      <div className="date-main">
+        <CalendarDays size={20}/>
+        <div>
+          <span>วันที่ปัจจุบัน</span>
+          <strong>{dateText}</strong>
+        </div>
+      </div>
+
+      <div className={`live-status ${online?"online":"offline"}`}>
+        {online?<Wifi size={15}/>:<WifiOff size={15}/>}
+        <div>
+          <strong>{online?"ระบบออนไลน์":"ออฟไลน์"}</strong>
+          <small>{online?"Firebase Connected":"กำลังใช้ Offline Cache"}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Dashboard({profile,online}){
   const latestActivities = [
     [FileText,"สร้างใบแจ้งหนี้","INV-2026-00018","5 นาทีที่แล้ว","blue"],
@@ -154,6 +224,8 @@ function Dashboard({profile,online}){
         <label className="global-search"><Search size={17}/><input placeholder="ค้นหาเอกสาร, ลูกค้า, โครงการ..."/></label>
         <div className="header-icons"><button><Bell size={18}/></button><button><Mail size={18}/></button><button><Settings size={18}/></button></div>
       </section>
+
+      <DateTimeWidget online={online}/>
 
       <section className="kpi-grid">
         {[
@@ -232,7 +304,7 @@ function Dashboard({profile,online}){
         <div><CheckCircle2/><span>SYSTEM STATUS</span><strong>All Systems Operational</strong></div>
         <div><ShieldCheck/><span>SECURITY</span><strong>Active</strong></div>
         <div><Database/><span>DATABASE</span><strong>Connected</strong></div>
-        <div><Sparkles/><span>VERSION</span><strong>2.3.0</strong></div>
+        <div><Sparkles/><span>VERSION</span><strong>2.4.0</strong></div>
       </footer>
     </>
   );
