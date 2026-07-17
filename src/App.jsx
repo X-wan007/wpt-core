@@ -10,6 +10,7 @@ import {
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
+import wptLogo from "./assets/wpt-logo.png";
 
 const menus = [
   ["dashboard","Dashboard",LayoutDashboard],
@@ -93,6 +94,90 @@ function Login(){
         </form>
       </section>
     </main>
+  );
+}
+
+function NeonLineChart(){
+  return (
+    <svg className="neon-line-chart" viewBox="0 0 760 300" preserveAspectRatio="none" role="img" aria-label="กราฟยอดขายรายเดือน">
+      <defs>
+        <linearGradient id="neonArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#23c7ff" stopOpacity=".42"/>
+          <stop offset="68%" stopColor="#168cff" stopOpacity=".10"/>
+          <stop offset="100%" stopColor="#168cff" stopOpacity="0"/>
+        </linearGradient>
+        <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      {[40,90,140,190,240].map(y=><line key={y} x1="48" y1={y} x2="744" y2={y} className="chart-grid-line"/>)}
+      {[106,164,222,280,338,396,454,512,570,628,686,744].map(x=><line key={x} x1={x} y1="22" x2={x} y2="248" className="chart-grid-line vertical"/>)}
+      <path className="neon-area" d="M48 238 C84 222 100 198 128 184 S174 134 207 154 S260 204 300 164 S350 116 392 146 S444 194 486 160 S538 138 574 150 S622 129 654 88 S704 54 744 27 L744 248 L48 248 Z"/>
+      <path className="neon-path glow" filter="url(#neonGlow)" d="M48 238 C84 222 100 198 128 184 S174 134 207 154 S260 204 300 164 S350 116 392 146 S444 194 486 160 S538 138 574 150 S622 129 654 88 S704 54 744 27"/>
+      <path className="neon-path" d="M48 238 C84 222 100 198 128 184 S174 134 207 154 S260 204 300 164 S350 116 392 146 S444 194 486 160 S538 138 574 150 S622 129 654 88 S704 54 744 27"/>
+      <circle cx="744" cy="27" r="6" className="neon-point" filter="url(#neonGlow)"/>
+      <text x="14" y="45">3M</text><text x="14" y="95">2M</text><text x="14" y="145">1M</text><text x="25" y="247">0</text>
+      {["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."].map((m,i)=><text key={m} x={50+i*61} y="278">{m}</text>)}
+    </svg>
+  );
+}
+
+function StatusDonut(){
+  return (
+    <div className="donut-layout">
+      <div className="status-donut">
+        <div><span>รวมทั้งสิ้น</span><strong>12.75M</strong><small>บาท</small></div>
+      </div>
+      <div className="donut-legend">
+        <p><i className="dot paid"/>ชำระเงินแล้ว <b>45%</b></p>
+        <p><i className="dot waiting"/>รอชำระ <b>30%</b></p>
+        <p><i className="dot billing"/>รอวางบิล <b>15%</b></p>
+        <p><i className="dot cancelled"/>ยกเลิก <b>10%</b></p>
+      </div>
+    </div>
+  );
+}
+
+
+function DateTimeWidget({online}){
+  const [now,setNow] = useState(new Date());
+
+  useEffect(()=>{
+    const timer = window.setInterval(()=>setNow(new Date()),1000);
+    return ()=>window.clearInterval(timer);
+  },[]);
+
+  const dateText = new Intl.DateTimeFormat("th-TH-u-ca-buddhist",{
+    weekday:"long", day:"numeric", month:"long", year:"numeric",
+    timeZone:"Asia/Bangkok"
+  }).format(now);
+
+  const timeText = new Intl.DateTimeFormat("th-TH",{
+    hour:"2-digit", minute:"2-digit", second:"2-digit",
+    hour12:false, timeZone:"Asia/Bangkok"
+  }).format(now);
+
+  return (
+    <section className="datetime-bar glass">
+      <div className="datetime-item time">
+        <Clock3 size={18}/>
+        <span>เวลา</span>
+        <strong>{timeText}</strong>
+      </div>
+      <div className="datetime-separator"/>
+      <div className="datetime-item date">
+        <CalendarDays size={18}/>
+        <span>วันที่</span>
+        <strong>{dateText}</strong>
+      </div>
+      <div className="datetime-separator"/>
+      <div className={`datetime-item status ${online?"online":"offline"}`}>
+        {online?<Wifi size={17}/>:<WifiOff size={17}/>}
+        <span>สถานะระบบ</span>
+        <strong>{online?"ออนไลน์ · Firebase Connected":"ออฟไลน์ · Offline Cache"}</strong>
+      </div>
+    </section>
   );
 }
 
@@ -259,18 +344,24 @@ function Dashboard({profile,online}){
           <StatusDonut/>
         </article>
 
-        <article className="activity-card glass">
-          <div className="section-heading"><div><span>ACTIVITY</span><h3>กิจกรรมล่าสุด</h3></div><a>ดูทั้งหมด</a></div>
-          {latestActivities.map(([Icon,title,code,time,tone])=>(
-            <div className="activity-list-item" key={code}>
-              <div className={`activity-badge ${tone}`}><Icon size={16}/></div>
-              <div><strong>{title}</strong><span>{code}</span><small>{time}</small></div>
+        <article className="activity-card glass quotation-top-card">
+          <div className="section-heading"><div><span>QUOTATIONS</span><h3>ใบเสนอราคาล่าสุด</h3></div><a>ดูทั้งหมด</a></div>
+          <div className="compact-quote-head"><span>เลขที่</span><span>ลูกค้า</span><span>มูลค่า</span><span>สถานะ</span></div>
+          {[
+            ["QT-2026-00025","บจก. เอสซี คอนสตรัคชั่น","250,000","อนุมัติแล้ว","success"],
+            ["QT-2026-00024","บจก. สยามก่อสร้าง","320,000","ร่าง","draft"],
+            ["QT-2026-00023","บจก. อินทนนท์บิลดิ้ง","125,000","รออนุมัติ","pending"],
+            ["QT-2026-00022","บจก. ยูนิเวอร์แซล","480,000","อนุมัติแล้ว","success"]
+          ].map(row=>(
+            <div className="compact-quote-row" key={row[0]}>
+              <span>{row[0]}</span><span>{row[1]}</span><span>{row[2]}</span>
+              <span><b className={row[4]}>{row[3]}</b></span>
             </div>
           ))}
         </article>
       </section>
 
-      <section className="lower-dashboard-grid">
+      <section className="lower-dashboard-grid refined">
         <article className="ai-assistant-card glass">
           <div className="ai-mini-orb"><Bot/></div>
           <h3>AI Assistant</h3>
@@ -278,15 +369,14 @@ function Dashboard({profile,online}){
           <button><Sparkles size={16}/> เริ่มสนทนา</button>
         </article>
 
-        <article className="data-table-card glass">
-          <div className="section-heading"><div><span>QUOTATIONS</span><h3>ใบเสนอราคาล่าสุด</h3></div><a>ดูทั้งหมด</a></div>
-          <div className="data-table header"><span>เลขที่เอกสาร</span><span>ลูกค้า</span><span>มูลค่า</span><span>สถานะ</span></div>
-          {[
-            ["QT-2026-00025","บจก. เอสซี คอนสตรัคชั่น","250,000","อนุมัติแล้ว","success"],
-            ["QT-2026-00024","บจก. สยามก่อสร้าง","320,000","ร่าง","draft"],
-            ["QT-2026-00023","บจก. อินทนนท์บิลดิ้ง","125,000","รออนุมัติ","pending"],
-            ["QT-2026-00022","บจก. ยูนิเวอร์แซล","480,000","อนุมัติแล้ว","success"]
-          ].map(row=><div className="data-table" key={row[0]}><span>{row[0]}</span><span>{row[1]}</span><span>{row[2]}</span><span><b className={row[4]}>{row[3]}</b></span></div>)}
+        <article className="latest-activity-card glass">
+          <div className="section-heading"><div><span>ACTIVITY</span><h3>กิจกรรมล่าสุด</h3></div><a>ดูทั้งหมด</a></div>
+          {latestActivities.map(([Icon,title,code,time,tone])=>(
+            <div className="activity-list-item" key={code}>
+              <div className={`activity-badge ${tone}`}><Icon size={16}/></div>
+              <div><strong>{title}</strong><span>{code}</span><small>{time}</small></div>
+            </div>
+          ))}
         </article>
 
         <article className="schedule-card glass">
@@ -296,7 +386,11 @@ function Dashboard({profile,online}){
             ["11:00","ติดตามงานใบเสนอราคา","QT-2026-00024"],
             ["14:00","นำเสนอโปรเจกต์","โครงการก่อสร้างสำนักงาน"],
             ["16:00","ติดตามการชำระเงิน","INV-2026-00015"]
-          ].map(([time,title,sub])=><div className="schedule-row" key={time}><time>{time}</time><i/><div><strong>{title}</strong><span>{sub}</span></div></div>)}
+          ].map(([time,title,sub])=>(
+            <div className="schedule-row" key={time}>
+              <time>{time}</time><i/><div><strong>{title}</strong><span>{sub}</span></div>
+            </div>
+          ))}
         </article>
       </section>
 
@@ -304,7 +398,7 @@ function Dashboard({profile,online}){
         <div><CheckCircle2/><span>SYSTEM STATUS</span><strong>All Systems Operational</strong></div>
         <div><ShieldCheck/><span>SECURITY</span><strong>Active</strong></div>
         <div><Database/><span>DATABASE</span><strong>Connected</strong></div>
-        <div><Sparkles/><span>VERSION</span><strong>2.4.0</strong></div>
+        <div><Sparkles/><span>VERSION</span><strong>2.5.0</strong></div>
       </footer>
     </>
   );
@@ -498,7 +592,13 @@ export default function App(){
     <div className="app-shell">
       {side&&<button className="overlay" onClick={()=>setSide(false)}/>}
       <aside className={`sidebar ${side?"open":""}`}>
-        <div className="brand"><div className="brand-symbol">WPT</div><div><strong>WPT <em>CORE</em></strong><small>Smart Business Platform</small></div></div>
+        <div className="brand">
+          <img className="brand-logo" src={wptLogo} alt="WPT"/>
+          <div className="brand-copy">
+            <strong>WPT CORE</strong>
+            <small>Smart Business Platform</small>
+          </div>
+        </div>
         <button className="collapse-btn"><Menu size={18}/></button>
         <nav>{menus.map(([key,title,Icon],index)=><div key={key}>{index===5&&<div className="nav-divider"/>}<button className={page===key?"active":""} onClick={()=>navigate(key)}><Icon size={18}/><span>{title}</span><ChevronRight size={14}/></button></div>)}</nav>
         <div className={`connection ${online?"":"offline"}`}><i/>{online?"Firebase Connected":"Offline Cache"}</div>
